@@ -8,7 +8,7 @@ from chardet.universaldetector import UniversalDetector
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QTextEdit, QAction,
                              QFileDialog, QMessageBox, QStatusBar, QDialog,
                              QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout)
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from PyQt5.QtCore import QThread, pyqtSignal, Qt, QSettings
 from PyQt5.QtGui import QIcon, QTextCursor, QTextDocument
 
 
@@ -209,6 +209,7 @@ class Scratchpad(QMainWindow):
         self.current_file = file_to_open
         self.file_handler = None
         self.unsaved_changes = False
+        self.loadRecentFiles()
         self.initUI()
         if file_to_open:
             self.load_file_on_startup(file_to_open)
@@ -290,12 +291,18 @@ class Scratchpad(QMainWindow):
         importFromWebAction.triggered.connect(self.importFromWeb)
         menu.addAction(importFromWebAction)
         self.actions['importfromweb'] = importFromWebAction
+
         exitAction = QAction('Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.triggered.connect(self.close)
         menu.addAction(exitAction)
         self.actions['exit'] = exitAction
-
+        #----
+        menu.addSeparator()
+        self.recentFilesMenu = menu.addMenu('Recently Opened Files')
+        self.recentFilesMenu.aboutToShow.connect(self.updateRecentFilesMenu)
+        self.updateRecentFilesMenu() #Removing this means you need to hover over it before it grays out
+        
     def createEditActions(self, menu):
         undoAction = QAction('Undo', self)
         undoAction.setShortcut('Ctrl+Z')
@@ -369,6 +376,8 @@ class Scratchpad(QMainWindow):
         else:
             self.textEdit.setPlainText(content)
             self.setWindowTitle(f'Scratchpad - {os.path.basename(self.current_file)}')
+            if self.current_file:
+                self.addToRecentFiles(self.current_file)
 
     def saveFile(self):
         """Save the current file."""
@@ -429,8 +438,54 @@ class Scratchpad(QMainWindow):
         if not after_save:
             asterisk = "*" if self.unsaved_changes else ""
         self.statusBar.showMessage(f"Line: {self.line} | Column: {self.column} | Characters: {self.char_count} | Encoding: {self.encoding} {asterisk}")
+    #Line 433 -> 463 relates to recent files and opening them
+    def loadRecentFiles(self):
+        self.settings = QSettings("Scratchpad", "ScratchpadApp")
+        self.recent_files = self.settings.value("recentFiles", [], type=list)
 
+    def addToRecentFiles(self, file_path):
+        if file_path in self.recent_files:
+            self.recent_files.remove(file_path)          
+        self.recent_files.insert(0, file_path)
+        self.recent_files = self.recent_files[:5] #This is the amount of files that should be displayed
+        self.settings.setValue("recentFiles", self.recent_files)
+        self.updateRecentFilesMenu()
 
+    def updateRecentFilesMenu(self):
+        self.recentFilesMenu.clear()
+        if not self.recent_files:
+            self.recentFilesMenu.setEnabled(False)
+        else:
+            self.recentFilesMenu.setEnabled(True)
+            for file in self.recent_files:
+                file_name = os.path.basename(file)
+                action = QAction(file_name, self)
+                action.triggered.connect(lambda checked, path=file: self.openRecentFile(path))
+                action.setToolTip(file)
+                self.recentFilesMenu.addAction(action)
+            self.recentFilesMenu.addSeparator()
+            clearAction = QAction("Clear Recently Opened Files", self)
+            clearAction.triggered.connect(self.clearRecentFiles)
+            self.recentFilesMenu.addAction(clearAction)
+
+    def openRecentFile(self, file_path):
+        if os.path.exists(file_path):
+            self.current_file = file_path
+            self.file_handler = FileHandler(file_path)
+            self.file_handler.file_content_loaded.connect(self.loadFileContent)
+            self.file_handler.start()
+        else:
+            QMessageBox.warning(self, "File Not Found", f"File not found: {file_path}")
+            if file_path in self.recent_files:
+                self.recent_files.remove(file_path)
+                self.settings.setValue("recentFiles", self.recent_files)
+                self.updateRecentFilesMenu()
+                
+    def clearRecentFiles(self):
+        self.recent_files = []
+        self.settings.setValue("recentFiles", self.recent_files)
+        self.updateRecentFilesMenu()
+        
 
 """ Start the program """
 if __name__ == '__main__':
