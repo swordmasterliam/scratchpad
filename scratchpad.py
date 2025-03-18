@@ -291,17 +291,15 @@ class Scratchpad(QMainWindow):
         importFromWebAction.triggered.connect(self.importFromWeb)
         menu.addAction(importFromWebAction)
         self.actions['importfromweb'] = importFromWebAction
-
         exitAction = QAction('Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.triggered.connect(self.close)
         menu.addAction(exitAction)
         self.actions['exit'] = exitAction
-        #----
         menu.addSeparator()
         self.recentFilesMenu = menu.addMenu('Recently Opened Files')
         self.recentFilesMenu.aboutToShow.connect(self.updateRecentFilesMenu)
-        self.updateRecentFilesMenu() #Removing this means you need to hover over it before it grays out
+        self.updateRecentFilesMenu()
         
     def createEditActions(self, menu):
         undoAction = QAction('Undo', self)
@@ -438,7 +436,6 @@ class Scratchpad(QMainWindow):
         if not after_save:
             asterisk = "*" if self.unsaved_changes else ""
         self.statusBar.showMessage(f"Line: {self.line} | Column: {self.column} | Characters: {self.char_count} | Encoding: {self.encoding} {asterisk}")
-    #Line 433 -> 463 relates to recent files and opening them
     def loadRecentFiles(self):
         self.settings = QSettings("Scratchpad", "ScratchpadApp")
         self.recent_files = self.settings.value("recentFiles", [], type=list)
@@ -447,7 +444,7 @@ class Scratchpad(QMainWindow):
         if file_path in self.recent_files:
             self.recent_files.remove(file_path)          
         self.recent_files.insert(0, file_path)
-        self.recent_files = self.recent_files[:5] #This is the amount of files that should be displayed
+        self.recent_files = self.recent_files[:5]
         self.settings.setValue("recentFiles", self.recent_files)
         self.updateRecentFilesMenu()
 
