@@ -4,6 +4,7 @@ import os
 import requests
 import validators
 import chardet
+import importlib.util
 from chardet.universaldetector import UniversalDetector
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QTextEdit, QAction,
                              QFileDialog, QMessageBox, QStatusBar, QDialog,
@@ -52,6 +53,30 @@ def load_icon(icon_name):
     if os.path.exists(icon_path):
         return QIcon(icon_path)
     return None
+
+
+
+""" Utility function to load plugins """
+def load_plugins(app_context):
+    user_home = os.path.expanduser("~")
+    plugins_dir = os.path.join(user_home, "spplugins")
+    os.makedirs(plugins_dir, exist_ok=True)
+    loaded_plugins = []
+    for filename in os.listdir(plugins_dir):
+        if filename.endswith(".py") and not filename.startswith("_"):
+            plugin_path = os.path.join(plugins_dir, filename)
+            mod_name = os.path.splitext(filename)[0]
+            spec = importlib.util.spec_from_file_location(mod_name, plugin_path)
+            module = importlib.util.module_from_spec(spec)
+            try:
+                spec.loader.exec_module(module)
+                if hasattr(module, "register_plugin"):
+                    module.register_plugin(app_context)
+                    loaded_plugins.append(mod_name)
+                    print(f"Plugin '{mod_name}' loaded successfully from {plugins_dir}")
+            except Exception as e:
+                print(f"Failed to load plugin '{filename}' from {plugins_dir}: {e}")
+    return loaded_plugins
 
 
 
@@ -156,6 +181,8 @@ class ImportFromWebDialog(QDialog):
         self.layout.addWidget(self.fetch_button)
         self.fetch_button.clicked.connect(self.fetch_from_web)
         self.setLayout(self.layout)
+        app_context = {"main_window": self}
+        self.plugins = load_plugins(app_context)
 
     def fetch_from_web(self):
         url = self.url_input.text().strip()
@@ -213,6 +240,8 @@ class Scratchpad(QMainWindow):
         self.initUI()
         if file_to_open:
             self.load_file_on_startup(file_to_open)
+        app_context = {"main_window": self}
+        self.plugins = load_plugins(app_context)
 
     def load_file_on_startup(self, file_path):
         if os.path.exists(file_path):
