@@ -1,4 +1,4 @@
 requests
 validators
 chardet
-PyQt5
+PyQt6

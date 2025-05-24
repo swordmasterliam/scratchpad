@@ -5,12 +5,12 @@ import requests
 import validators
 import chardet
 from chardet.universaldetector import UniversalDetector
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QTextEdit, QAction,
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QTextEdit,
                              QFileDialog, QMessageBox, QStatusBar, QDialog,
                              QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout)
-from PyQt5.QtCore import QThread, pyqtSignal, Qt, QSettings
-from PyQt5.QtGui import QIcon, QTextCursor, QTextDocument
-
+from PyQt6.QtCore import QThread, pyqtSignal, Qt, QSettings
+from PyQt6.QtGui import QIcon, QTextCursor, QTextDocument
+from PyQt6.QtGui import QAction
 
 
 """ Thread for handling file-related operations """
@@ -349,7 +349,7 @@ class Scratchpad(QMainWindow):
 
     def importFromWeb(self):
         dialog = ImportFromWebDialog(self.textEdit)
-        dialog.exec_()
+        dialog.exec()
 
     def newFile(self):
         self.current_file = None
@@ -420,7 +420,7 @@ class Scratchpad(QMainWindow):
             QMessageBox.warning(self, "Error", "Failed to save file!")
 
     def saveFileAs(self):
-        options = QFileDialog.Options()
+        options = QFileDialog.Option(1)
         try:
             file_name, _ = QFileDialog.getSaveFileName(self, "Save File As", "", "Text Files (*.txt);;All Files (*)", options=options)
             if file_name:
@@ -496,4 +496,4 @@ if __name__ == '__main__':
         file_to_open = sys.argv[1]
     scratchpad = Scratchpad(file_to_open)
     scratchpad.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
