@@ -191,7 +191,7 @@ class ImportFromWebDialog(QDialog):
             try:
                 response = requests.get(url)
                 response.raise_for_status()
-                self.text_edit.setPlainText(response.text)
+                self.text_edit.setText(response.text)
                 self.accept()
             except requests.exceptions.RequestException as e:
                 QMessageBox.critical(self, "Error", f"Failed to fetch content: {e}")
