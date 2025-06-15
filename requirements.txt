@@ -2,3 +2,4 @@ requests
 validators
 chardet
 PyQt5
+QScintilla
