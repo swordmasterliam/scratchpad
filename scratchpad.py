@@ -181,9 +181,26 @@ class FindReplaceDialog(QDialog):
     def replace_all(self):
         text_to_find = self.find_input.text()
         text_to_replace = self.replace_input.text()
-        if text_to_find and text_to_replace:
-            content = self.text_edit.toPlainText()
-            self.text_edit.setPlainText(content.replace(text_to_find, text_to_replace))
+        if text_to_find:
+            self.text_edit.setCursorPosition(0, 0)
+            count = 0
+            while self.text_edit.findFirst(
+                text_to_find,
+                False,
+                False,
+                False,
+                True,
+                True
+            ):
+                self.text_edit.replaceSelectedText(text_to_replace)
+                count += 1
+            
+            if count > 0:
+                QMessageBox.information(self, "Replace All", f"Replaced {count} occurrences.")
+            else:
+                QMessageBox.information(self, "Replace All", "No occurrences found.")
+        else:
+            QMessageBox.warning(self, "Empty Search", "Please enter text to find.")
 
 
 
