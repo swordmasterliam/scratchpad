@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QTextEdit, QAction,
                              QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout)
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QSettings
 from PyQt5.QtGui import QIcon, QTextCursor, QTextDocument
-
+from PyQt5.Qsci import QsciScintilla
 
 
 """ Thread for handling file-related operations """
@@ -270,9 +270,23 @@ class Scratchpad(QMainWindow):
         self.setWindowTitle('Scratchpad - Unnamed')
         self.setGeometry(100, 100, 800, 600)
         self.setWindowIcon(load_icon('scratchpad.png'))
-        self.textEdit = QTextEdit(self)
+
+        self.textEdit = QsciScintilla(self)
         self.setCentralWidget(self.textEdit)
-        self.textEdit.setAcceptRichText(False)
+        
+        self.textEdit.setUtf8(True)
+        self.textEdit.setMargins(0)
+        self.textEdit.setMarginWidth(0, "00000")
+        self.textEdit.setMarginLineNumbers(0, False)
+        self.textEdit.setBraceMatching(QsciScintilla.SloppyBraceMatch)
+        self.textEdit.setAutoIndent(True)
+        self.textEdit.setIndentationsUseTabs(False)
+        self.textEdit.setTabWidth(4)
+        self.textEdit.setIndentationGuides(True) 
+        self.textEdit.setCaretLineVisible(True)  
+        self.textEdit.setCaretLineBackgroundColor(Qt.lightGray)
+        self.setCentralWidget(self.textEdit)
+        
         self.statusBar = QStatusBar(self)
         self.setStatusBar(self.statusBar)
         self.line = 1
@@ -280,8 +294,8 @@ class Scratchpad(QMainWindow):
         self.char_count = 0
         self.encoding = "UTF-8"
         self.textEdit.cursorPositionChanged.connect(self.updateStatusBar)
-        self.createMenu()
         self.textEdit.textChanged.connect(self.on_text_changed)
+        self.createMenu()
 
     def on_text_changed(self):
         self.unsaved_changes = True
