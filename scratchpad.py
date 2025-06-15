@@ -454,7 +454,7 @@ class Scratchpad(QMainWindow):
         if content.startswith("Error reading file"):
             QMessageBox.critical(self, "Error", content)
         else:
-            self.textEdit.setPlainText(content)
+            self.textEdit.setText(content)
             self.setWindowTitle(f'Scratchpad - {os.path.basename(self.current_file)}')
             if self.current_file:
                 self.addToRecentFiles(self.current_file)
