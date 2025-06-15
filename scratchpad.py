@@ -254,7 +254,7 @@ class Scratchpad(QMainWindow):
             QMessageBox.critical(self, "Error", f"File does not exist: {file_path}")
 
     def closeEvent(self, event):
-        if self.textEdit.document().isModified():
+        if self.unsaved_changes:
             dialog = UnsavedWorkDialog(self)
             result = dialog.exec_()
             if result == QDialog.Accepted:
