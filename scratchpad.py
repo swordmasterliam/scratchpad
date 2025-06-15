@@ -471,10 +471,11 @@ class Scratchpad(QMainWindow):
             QMessageBox.warning(self, "Error", f"Failed to save file: {e}")
 
     def updateStatusBar(self, after_save=False):
-        cursor = self.textEdit.textCursor()
-        self.line = cursor.blockNumber() + 1
-        self.column = cursor.columnNumber() + 1
-        self.char_count = len(self.textEdit.toPlainText())
+        line, column = self.textEdit.getCursorPosition()
+        self.line = line + 1 
+        self.column = column + 1
+        
+        self.char_count = len(self.textEdit.text())
         asterisk = ""
         if not after_save:
             asterisk = "*" if self.unsaved_changes else ""
