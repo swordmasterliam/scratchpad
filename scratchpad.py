@@ -143,8 +143,14 @@ class FindReplaceDialog(QDialog):
     def find_next(self):
         text_to_find = self.find_input.text().strip()
         if text_to_find:
-            options = QTextDocument.FindFlags()
-            found = self.text_edit.find(text_to_find, options)
+            found = self.text_edit.findFirst(
+                text_to_find,
+                False,
+                False,
+                False,
+                True,
+                True
+            )
             if not found:
                 QMessageBox.information(self, "Not Found", "No more occurrences found.")
         else:
