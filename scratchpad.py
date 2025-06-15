@@ -8,7 +8,8 @@ import importlib.util
 from chardet.universaldetector import UniversalDetector
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QTextEdit, QAction,
                              QFileDialog, QMessageBox, QStatusBar, QDialog,
-                             QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout)
+                             QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout,
+                             QInputDialog)
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QSettings
 from PyQt5.QtGui import QIcon, QTextCursor, QTextDocument
 from PyQt5.Qsci import QsciScintilla
@@ -422,7 +423,7 @@ class Scratchpad(QMainWindow):
 
     def saveFile(self):
         """Save the current file."""
-        content = self.textEdit.toPlainText()
+        content = self.textEdit.text()
         if self.encoding is None:
             self.encoding = 'utf-8'
         try:
@@ -435,12 +436,6 @@ class Scratchpad(QMainWindow):
                 self.saveFileAs()
         except UnicodeEncodeError:
             self.promptForEncoding(content)
-
-    def promptForEncoding(self, content):
-        encoding, ok = QInputDialog.getItem(self, "Choose Encoding", "Select Encoding", 
-                                             ["UTF-8", "ISO-8859-1", "Windows-1252", "UTF-16"], 0, False)
-        if ok:
-            self.saveFileWithEncoding(content, encoding)
     
     def saveFileWithEncoding(self, content, encoding):
         if self.current_file:
@@ -452,6 +447,11 @@ class Scratchpad(QMainWindow):
             except Exception as e:
                 QMessageBox.warning(self, "Error", f"Failed to save file with encoding '{encoding}': {e}")
 
+    def promptForEncoding(self, content):
+        encoding, ok = QInputDialog.getItem(self, "Choose Encoding", "Select Encoding", 
+                                             ["UTF-8", "ISO-8859-1", "Windows-1252", "UTF-16"], 0, False)
+        if ok:
+            self.saveFileWithEncoding(content, encoding)
 
     def handleSaveFile(self, success):
         if success:
