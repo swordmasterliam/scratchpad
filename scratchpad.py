@@ -8,10 +8,11 @@ import importlib.util
 from chardet.universaldetector import UniversalDetector
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QTextEdit, QAction,
                              QFileDialog, QMessageBox, QStatusBar, QDialog,
-                             QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout)
+                             QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout,
+                             QInputDialog)
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QSettings
 from PyQt5.QtGui import QIcon, QTextCursor, QTextDocument
-
+from PyQt5.Qsci import QsciScintilla
 
 
 """ Thread for handling file-related operations """
@@ -142,8 +143,14 @@ class FindReplaceDialog(QDialog):
     def find_next(self):
         text_to_find = self.find_input.text().strip()
         if text_to_find:
-            options = QTextDocument.FindFlags()
-            found = self.text_edit.find(text_to_find, options)
+            found = self.text_edit.findFirst(
+                text_to_find,
+                False,
+                False,
+                False,
+                True,
+                True
+            )
             if not found:
                 QMessageBox.information(self, "Not Found", "No more occurrences found.")
         else:
@@ -152,16 +159,48 @@ class FindReplaceDialog(QDialog):
     def replace(self):
         text_to_find = self.find_input.text()
         text_to_replace = self.replace_input.text()
-        if text_to_find and text_to_replace:
-            content = self.text_edit.toPlainText()
-            self.text_edit.setPlainText(content.replace(text_to_find, text_to_replace, 1))
+
+        if not text_to_find:
+            QMessageBox.warning(self, "Empty Search", "Please enter text to find.")
+            return
+            
+        if self.text_edit.hasSelectedText():
+            selected_text = self.text_edit.selectedText()
+            if selected_text.lower() == text_to_find.lower():
+                self.text_edit.replaceSelectedText(text_to_replace)
+                self.find_next()
+            else:
+                self.find_next()
+                if self.text_edit.hasSelectedText() and self.text_edit.selectedText() == text_to_find:
+                    self.text_edit.replaceSelectedText(text_to_replace)
+        else:
+            self.find_next()
+            if self.text_edit.hasSelectedText() and self.text_edit.selectedText() == text_to_find:
+                self.text_edit.replaceSelectedText(text_to_replace)
 
     def replace_all(self):
         text_to_find = self.find_input.text()
         text_to_replace = self.replace_input.text()
-        if text_to_find and text_to_replace:
-            content = self.text_edit.toPlainText()
-            self.text_edit.setPlainText(content.replace(text_to_find, text_to_replace))
+        if text_to_find:
+            self.text_edit.setCursorPosition(0, 0)
+            count = 0
+            while self.text_edit.findFirst(
+                text_to_find,
+                False,
+                False,
+                False,
+                True,
+                True
+            ):
+                self.text_edit.replaceSelectedText(text_to_replace)
+                count += 1
+            
+            if count > 0:
+                QMessageBox.information(self, "Replace All", f"Replaced {count} occurrences.")
+            else:
+                QMessageBox.information(self, "Replace All", "No occurrences found.")
+        else:
+            QMessageBox.warning(self, "Empty Search", "Please enter text to find.")
 
 
 
@@ -190,7 +229,7 @@ class ImportFromWebDialog(QDialog):
             try:
                 response = requests.get(url)
                 response.raise_for_status()
-                self.text_edit.setPlainText(response.text)
+                self.text_edit.setText(response.text)
                 self.accept()
             except requests.exceptions.RequestException as e:
                 QMessageBox.critical(self, "Error", f"Failed to fetch content: {e}")
@@ -253,7 +292,7 @@ class Scratchpad(QMainWindow):
             QMessageBox.critical(self, "Error", f"File does not exist: {file_path}")
 
     def closeEvent(self, event):
-        if self.textEdit.document().isModified():
+        if self.unsaved_changes:
             dialog = UnsavedWorkDialog(self)
             result = dialog.exec_()
             if result == QDialog.Accepted:
@@ -270,9 +309,23 @@ class Scratchpad(QMainWindow):
         self.setWindowTitle('Scratchpad - Unnamed')
         self.setGeometry(100, 100, 800, 600)
         self.setWindowIcon(load_icon('scratchpad.png'))
-        self.textEdit = QTextEdit(self)
+
+        self.textEdit = QsciScintilla(self)
         self.setCentralWidget(self.textEdit)
-        self.textEdit.setAcceptRichText(False)
+        
+        self.textEdit.setUtf8(True)
+        self.textEdit.setMargins(0)
+        self.textEdit.setMarginWidth(0, "00000")
+        self.textEdit.setMarginLineNumbers(0, False)
+        self.textEdit.setBraceMatching(QsciScintilla.SloppyBraceMatch)
+        self.textEdit.setAutoIndent(True)
+        self.textEdit.setIndentationsUseTabs(False)
+        self.textEdit.setTabWidth(4)
+        self.textEdit.setIndentationGuides(True) 
+        self.textEdit.setCaretLineVisible(True)  
+        self.textEdit.setCaretLineBackgroundColor(Qt.lightGray)
+        self.setCentralWidget(self.textEdit)
+        
         self.statusBar = QStatusBar(self)
         self.setStatusBar(self.statusBar)
         self.line = 1
@@ -280,8 +333,8 @@ class Scratchpad(QMainWindow):
         self.char_count = 0
         self.encoding = "UTF-8"
         self.textEdit.cursorPositionChanged.connect(self.updateStatusBar)
-        self.createMenu()
         self.textEdit.textChanged.connect(self.on_text_changed)
+        self.createMenu()
 
     def on_text_changed(self):
         self.unsaved_changes = True
@@ -401,14 +454,14 @@ class Scratchpad(QMainWindow):
         if content.startswith("Error reading file"):
             QMessageBox.critical(self, "Error", content)
         else:
-            self.textEdit.setPlainText(content)
+            self.textEdit.setText(content)
             self.setWindowTitle(f'Scratchpad - {os.path.basename(self.current_file)}')
             if self.current_file:
                 self.addToRecentFiles(self.current_file)
 
     def saveFile(self):
         """Save the current file."""
-        content = self.textEdit.toPlainText()
+        content = self.textEdit.text()
         if self.encoding is None:
             self.encoding = 'utf-8'
         try:
@@ -421,12 +474,6 @@ class Scratchpad(QMainWindow):
                 self.saveFileAs()
         except UnicodeEncodeError:
             self.promptForEncoding(content)
-
-    def promptForEncoding(self, content):
-        encoding, ok = QInputDialog.getItem(self, "Choose Encoding", "Select Encoding", 
-                                             ["UTF-8", "ISO-8859-1", "Windows-1252", "UTF-16"], 0, False)
-        if ok:
-            self.saveFileWithEncoding(content, encoding)
     
     def saveFileWithEncoding(self, content, encoding):
         if self.current_file:
@@ -438,6 +485,11 @@ class Scratchpad(QMainWindow):
             except Exception as e:
                 QMessageBox.warning(self, "Error", f"Failed to save file with encoding '{encoding}': {e}")
 
+    def promptForEncoding(self, content):
+        encoding, ok = QInputDialog.getItem(self, "Choose Encoding", "Select Encoding", 
+                                             ["UTF-8", "ISO-8859-1", "Windows-1252", "UTF-16"], 0, False)
+        if ok:
+            self.saveFileWithEncoding(content, encoding)
 
     def handleSaveFile(self, success):
         if success:
@@ -457,10 +509,11 @@ class Scratchpad(QMainWindow):
             QMessageBox.warning(self, "Error", f"Failed to save file: {e}")
 
     def updateStatusBar(self, after_save=False):
-        cursor = self.textEdit.textCursor()
-        self.line = cursor.blockNumber() + 1
-        self.column = cursor.columnNumber() + 1
-        self.char_count = len(self.textEdit.toPlainText())
+        line, column = self.textEdit.getCursorPosition()
+        self.line = line + 1 
+        self.column = column + 1
+        
+        self.char_count = len(self.textEdit.text())
         asterisk = ""
         if not after_save:
             asterisk = "*" if self.unsaved_changes else ""
