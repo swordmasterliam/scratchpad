@@ -29,5 +29,6 @@ To personalize the application, create **spstyle.css** in your user folder (*ex:
 
 - [Raven Development Team](https://ravendevteam.org/)
 - [Icons by Icons8](https://icons8.com/)
+- [tahakc](https://github.com/tahakc)
 - [JanluOfficial](https://github.com/JanluOfficial)
 - [swordmasterliam](https://github.com/swordmasterliam)
