@@ -3,7 +3,7 @@
 */
 
 /* Text area */
-QTextEdit, QDialog QTextEdit {
+QTextEdit, QDialog QTextEdit, QsciScintilla, QDialog QsciScintilla {
     font-family: 'Cascadia Code', 'Courier New', Courier, monospace;
     font-weight: 400;
     font-size: 14px;
