@@ -120,79 +120,57 @@ def get_preferred_font():
 
 
 class FindReplaceDialog(QDialog):
-	def __init__(self, editor, parent=None):
-		super().__init__(parent)
-		self.editor = editor
-		self.setWindowTitle("Find and Replace")
-		icon = load_icon('scratchpad.png')
-		self.setWindowIcon(icon if isinstance(icon, QIcon) else QIcon())
-		self.layout = QVBoxLayout(self)
-		self.find_label = QLabel("Find:")
-		self.find_input = QLineEdit(self)
-		self.layout.addWidget(self.find_label)
-		self.layout.addWidget(self.find_input)
-		self.replace_label = QLabel("Replace with:")
-		self.replace_input = QLineEdit(self)
-		self.layout.addWidget(self.replace_label)
-		self.layout.addWidget(self.replace_input)
-		self.button_layout = QHBoxLayout()
-		self.find_button = QPushButton("Find Next", self)
-		self.replace_button = QPushButton("Replace", self)
-		self.replace_all_button = QPushButton("Replace All", self)
-		self.button_layout.addWidget(self.find_button)
-		self.button_layout.addWidget(self.replace_button)
-		self.button_layout.addWidget(self.replace_all_button)
-		self.layout.addLayout(self.button_layout)
-		self.find_button.clicked.connect(self.find_next)
-		self.replace_button.clicked.connect(self.replace)
-		self.replace_all_button.clicked.connect(self.replace_all)
-		self.setLayout(self.layout)
+    def __init__(self, text_edit):
+        super().__init__()
+        self.text_edit = text_edit
+        self.setWindowTitle("Find and Replace")
+        self.setWindowIcon(load_icon('scratchpad.png'))
+        self.layout = QVBoxLayout(self)
+        self.find_label = QLabel("Find:")
+        self.find_input = QLineEdit(self)
+        self.layout.addWidget(self.find_label)
+        self.layout.addWidget(self.find_input)
+        self.replace_label = QLabel("Replace with:")
+        self.replace_input = QLineEdit(self)
+        self.layout.addWidget(self.replace_label)
+        self.layout.addWidget(self.replace_input)
+        self.button_layout = QHBoxLayout()
+        self.find_button = QPushButton("Find Next", self)
+        self.replace_button = QPushButton("Replace", self)
+        self.replace_all_button = QPushButton("Replace All", self)
+        self.button_layout.addWidget(self.find_button)
+        self.button_layout.addWidget(self.replace_button)
+        self.button_layout.addWidget(self.replace_all_button)
+        self.layout.addLayout(self.button_layout)
+        self.find_button.clicked.connect(self.find_next)
+        self.replace_button.clicked.connect(self.replace)
+        self.replace_all_button.clicked.connect(self.replace_all)
+        self.setLayout(self.layout)
+        self.current_index = 0
 
-	def find_next(self):
-		ed = self.editor
-		text = self.find_input.text().strip()
-		if not text:
-			QMessageBox.warning(self, "Empty Search", "Please enter text to find.")
-			return
-		found = ed.findFirst(text, False, False, False, True, True)
-		if not found:
-			QMessageBox.information(self, "Not Found", "No more occurrences found.")
+    def find_next(self):
+        text_to_find = self.find_input.text().strip()
+        if text_to_find:
+            options = QTextDocument.FindFlags()
+            found = self.text_edit.find(text_to_find, options)
+            if not found:
+                QMessageBox.information(self, "Not Found", "No more occurrences found.")
+        else:
+            QMessageBox.warning(self, "Empty Search", "Please enter text to find.")
 
-	def replace(self):
-		ed = self.editor
-		find_text = self.find_input.text()
-		replace_text = self.replace_input.text()
-		if not find_text:
-			return
-		if ed.hasSelectedText() and ed.selectedText() == find_text:
-			ed.replaceSelectedText(replace_text)
-			ed.findFirst(find_text, False, False, False, True, True)
-			return
-		if not ed.findFirst(find_text, False, False, False, True, True):
-			return
-		ed.replaceSelectedText(replace_text)
-		ed.findFirst(find_text, False, False, False, True, True)
+    def replace(self):
+        text_to_find = self.find_input.text()
+        text_to_replace = self.replace_input.text()
+        if text_to_find and text_to_replace:
+            content = self.text_edit.toPlainText()
+            self.text_edit.setPlainText(content.replace(text_to_find, text_to_replace, 1))
 
-	def replace_all(self):
-		ed = self.editor
-		find_text = self.find_input.text()
-		replace_text = self.replace_input.text()
-		if not find_text:
-			return
-		ed.beginUndoAction()
-		try:
-			line, index = 0, 0
-			count_guard = 0
-			max_iters = 1_000_000
-			while count_guard < max_iters:
-				found = ed.findFirst(find_text, False, False, False, False, True, line, index, True, False)
-				if not found:
-					break
-				ed.replaceSelectedText(replace_text)
-				line, index = ed.getCursorPosition()
-				count_guard += 1
-		finally:
-			ed.endUndoAction()
+    def replace_all(self):
+        text_to_find = self.find_input.text()
+        text_to_replace = self.replace_input.text()
+        if text_to_find and text_to_replace:
+            content = self.text_edit.toPlainText()
+            self.text_edit.setPlainText(content.replace(text_to_find, text_to_replace))
 
 
 
