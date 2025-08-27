@@ -7,7 +7,7 @@ import chardet
 import importlib.util
 from chardet.universaldetector import UniversalDetector
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QTextEdit, QAction,
-                             QFileDialog, QMessageBox, QStatusBar, QDialog,
+                             QFileDialog, QMessageBox, QStatusBar, QDialog, QInputDialog
                              QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout)
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QSettings
 from PyQt5.QtGui import QIcon, QFont, QFontMetrics, QColor, QFontDatabase, QTextCursor, QTextDocument
