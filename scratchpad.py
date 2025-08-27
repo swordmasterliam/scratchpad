@@ -332,13 +332,15 @@ class Scratchpad(QMainWindow):
         if self.unsaved_changes:
             dialog = UnsavedWorkDialog(self)
             result = dialog.exec_()
-        if result == QDialog.Accepted:
-            self.saveFile()
-            event.accept()
-        elif result == QDialog.Rejected:
-            event.ignore()
-        elif result == 2:
-            event.accept()
+            if result == QDialog.Accepted:
+                self.saveFile()
+                event.accept()
+            elif result == QDialog.Rejected:
+                event.ignore()
+            elif result == 2:
+                event.accept()
+            else:
+                event.accept()
         else:
             event.accept()
 
