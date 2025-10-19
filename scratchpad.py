@@ -48,6 +48,8 @@ class FileHandler(QThread):
                             break
                     detector.close()
                 encoding = detector.result['encoding'] or 'utf-8'
+                if encoding and encoding.lower() == 'ascii':
+                    encoding = 'UTF-8'
                 with open(self.file_path, 'rb') as fb:
                     sample = fb.read(64 * 1024)
                 newline = detect_newline(sample)
@@ -738,6 +740,7 @@ class Scratchpad(QMainWindow):
         self.current_file = None
         self.textEdit.clear()
         self.setWindowTitle('Scratchpad - Unnamed')
+        self.encoding = "UTF-8"
         self.newline = "\r\n"
         self.textEdit.setEolMode(QsciScintilla.EolWindows)
         self.unsaved_changes = False
@@ -879,7 +882,7 @@ class Scratchpad(QMainWindow):
         asterisk = ""
         if not after_save:
             asterisk = "*" if self.unsaved_changes else ""
-        self.statusBar.showMessage(f"Line: {self.line} | Column: {self.column} | Characters: {self.char_count} | Encoding: {self.encoding} {asterisk}")
+        self.statusBar.showMessage(f"Line: {self.line} | Column: {self.column} | Characters: {self.char_count} | Encoding: {self.encoding.upper()} {asterisk}")
     def loadRecentFiles(self):
         self.settings = QSettings("Scratchpad", "ScratchpadApp")
         self.recent_files = self.settings.value("recentFiles", [], type=list)
