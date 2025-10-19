@@ -479,28 +479,33 @@ class Scratchpad(QMainWindow):
         self.app_context = {"main_window": self}
         self.plugins = load_plugins(self.app_context)
 
-    def load_file_on_startup(self, file_path):
-        if os.path.exists(file_path):
-            self.current_file = file_path
-            self._open_generation += 1
-            gen = self._open_generation
-            if self.file_handler is not None:
-                try:
-                    self.file_handler.file_content_loaded.disconnect()
-                except Exception:
-                    pass
-            handler = FileHandler(file_path)
-            handler.file_load_started.connect(lambda path, encoding, newline, gen=gen: self._on_file_load_started(gen, path, encoding, newline))
-            handler.file_chunk_loaded.connect(lambda path, chunk, is_last, gen=gen: self._on_file_chunk_loaded(gen, path, chunk, is_last))
-            handler.file_content_loaded.connect(lambda path, content, encoding, newline, gen=gen: self._on_file_content_loaded(gen, path, content, encoding, newline))
-            handler.finished.connect(handler.deleteLater)
-            handler.finished.connect(partial(self._on_handler_finished, handler))
+    def _start_file_load(self, file_path):
+        self.current_file = file_path
+        self._open_generation += 1
+        gen = self._open_generation
+
+        if self.file_handler is not None:
             try:
-                handler.destroyed.connect(partial(self._on_handler_destroyed, handler))
+                self.file_handler.file_content_loaded.disconnect()
             except Exception:
                 pass
-            handler.start()
-            self.file_handler = handler
+
+        handler = FileHandler(file_path)
+        handler.file_load_started.connect(lambda path, encoding, newline, gen=gen: self._on_file_load_started(gen, path, encoding, newline))
+        handler.file_chunk_loaded.connect(lambda path, chunk, is_last, gen=gen: self._on_file_chunk_loaded(gen, path, chunk, is_last))
+        handler.file_content_loaded.connect(lambda path, content, encoding, newline, gen=gen: self._on_file_content_loaded(gen, path, content, encoding, newline))
+        handler.finished.connect(handler.deleteLater)
+        handler.finished.connect(partial(self._on_handler_finished, handler))
+        try:
+            handler.destroyed.connect(partial(self._on_handler_destroyed, handler))
+        except Exception:
+            pass
+        handler.start()
+        self.file_handler = handler
+
+    def load_file_on_startup(self, file_path):
+        if os.path.exists(file_path):
+            self._start_file_load(file_path)
         else:
             QMessageBox.critical(self, "Error", f"File does not exist: {file_path}")
 
@@ -743,26 +748,7 @@ class Scratchpad(QMainWindow):
         try:
             file_name, _ = QFileDialog.getOpenFileName(self, "Open File", "", "Text Files (*.txt);;All Files (*)", options=options)
             if file_name:
-                self.current_file = file_name
-                self._open_generation += 1
-                gen = self._open_generation
-                if self.file_handler is not None:
-                    try:
-                        self.file_handler.file_content_loaded.disconnect()
-                    except Exception:
-                        pass
-                handler = FileHandler(file_name)
-                handler.file_load_started.connect(lambda path, encoding, newline, gen=gen: self._on_file_load_started(gen, path, encoding, newline))
-                handler.file_chunk_loaded.connect(lambda path, chunk, is_last, gen=gen: self._on_file_chunk_loaded(gen, path, chunk, is_last))
-                handler.file_content_loaded.connect(lambda path, content, encoding, newline, gen=gen: self._on_file_content_loaded(gen, path, content, encoding, newline))
-                handler.finished.connect(handler.deleteLater)
-                handler.finished.connect(partial(self._on_handler_finished, handler))
-                try:
-                    handler.destroyed.connect(partial(self._on_handler_destroyed, handler))
-                except Exception:
-                    pass
-                handler.start()
-                self.file_handler = handler
+                self._start_file_load(file_name)
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Failed to open file: {e}")
 
@@ -939,26 +925,7 @@ class Scratchpad(QMainWindow):
 
     def openRecentFile(self, file_path):
         if os.path.exists(file_path):
-            self.current_file = file_path
-            self._open_generation += 1
-            gen = self._open_generation
-            if self.file_handler is not None:
-                try:
-                    self.file_handler.file_content_loaded.disconnect()
-                except Exception:
-                    pass
-            handler = FileHandler(file_path)
-            handler.file_load_started.connect(lambda path, encoding, newline, gen=gen: self._on_file_load_started(gen, path, encoding, newline))
-            handler.file_chunk_loaded.connect(lambda path, chunk, is_last, gen=gen: self._on_file_chunk_loaded(gen, path, chunk, is_last))
-            handler.file_content_loaded.connect(lambda path, content, encoding, newline, gen=gen: self._on_file_content_loaded(gen, path, content, encoding, newline))
-            handler.finished.connect(handler.deleteLater)
-            handler.finished.connect(partial(self._on_handler_finished, handler))
-            try:
-                handler.destroyed.connect(partial(self._on_handler_destroyed, handler))
-            except Exception:
-                pass
-            handler.start()
-            self.file_handler = handler
+            self._start_file_load(file_path)
         else:
             QMessageBox.warning(self, "File Not Found", f"File not found: {file_path}")
             if file_path in self.recent_files:
