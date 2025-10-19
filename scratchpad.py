@@ -839,7 +839,7 @@ class Scratchpad(QMainWindow):
     def saveFileWithEncoding(self, content, encoding):
         if self.current_file:
             try:
-                with open(self.current_file, 'w', encoding=encoding, newline=self.newline) as file:
+                with open(self.current_file, 'w', encoding=encoding, newline='') as file:
                     file.write(content)
                 self.unsaved_changes = False
                 self.updateStatusBar(after_save=True)
