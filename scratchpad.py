@@ -872,6 +872,8 @@ class Scratchpad(QMainWindow):
         cursor = self.textEdit.textCursor()
         self.line = cursor.blockNumber() + 1
         self.column = cursor.columnNumber() + 1
+        text = self.textEdit.text()
+        word_count = len(text.split())
         try:
             self.char_count = self.textEdit.length()
         except Exception:
@@ -882,7 +884,7 @@ class Scratchpad(QMainWindow):
         asterisk = ""
         if not after_save:
             asterisk = "*" if self.unsaved_changes else ""
-        self.statusBar.showMessage(f"Line: {self.line} | Column: {self.column} | Characters: {self.char_count} | Encoding: {self.encoding.upper()} {asterisk}")
+        self.statusBar.showMessage(f"Line: {self.line} | Column: {self.column} | Words: {word_count} | Characters: {self.char_count} | Encoding: {self.encoding.upper()} {asterisk}")
     def loadRecentFiles(self):
         self.settings = QSettings("Scratchpad", "ScratchpadApp")
         self.recent_files = self.settings.value("recentFiles", [], type=list)
